@@ -1,0 +1,490 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Thème toGæther pour Overleaf local — injecté par nginx (custom/overleaf.conf)
+   Source des jetons : toGaether/app/globals.css (:root et .dark), 2026-09-24.
+   Clair d'abord (demande du 24/09/2026) — les comptes ont « overallTheme = light- ».
+   Principe : on remplace la PALETTE d'Overleaf (neutral / green / radius / font)
+   plutôt que chaque composant ; les alias « *-themed » suivent d'eux-mêmes.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: "Outfit";
+  src: url("/togaether/fonts/Outfit-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  /* — Encre et surfaces (teinte 280, comme toGæther) — */
+  --tg-ink-0: oklch(0.09 0.01 280);   /* fond sombre  */
+  --tg-ink-1: oklch(0.12 0.012 280);
+  --tg-ink-2: oklch(0.14 0.015 280);  /* carte sombre */
+  --tg-ink-3: oklch(0.20 0.015 280);  /* muted sombre */
+  --tg-ink-4: oklch(0.22 0.015 280);  /* filet sombre */
+  --tg-ink-5: oklch(0.32 0.015 280);
+  --tg-ink-6: oklch(0.50 0.02 280);
+  --tg-ink-7: oklch(0.65 0.02 280);   /* texte secondaire sombre */
+  --tg-ink-8: oklch(0.88 0.01 280);   /* filet clair */
+  --tg-ink-9: oklch(0.94 0.01 280);
+  --tg-ink-10: oklch(0.975 0.004 280);
+  --tg-ink-11: oklch(0.98 0.005 280); /* texte sombre */
+
+  /* — Orange toGæther (primary) — */
+  --tg-orange: oklch(0.692 0.19 46.6);
+  --tg-orange-strong: oklch(0.705 0.213 47.6);
+  --tg-orange-light: oklch(0.82 0.17 52);
+  --tg-orange-dark: oklch(0.50 0.18 28);
+  --tg-orange-wash: oklch(0.692 0.19 46.6 / 0.14);
+  --tg-green: oklch(0.78 0.2 130);
+  --tg-purple: oklch(0.68 0.22 300);
+  --tg-red: oklch(0.65 0.25 25);
+  --tg-radius: 1rem;
+
+  /* — Palette Overleaf remplacée — */
+  --neutral-90: var(--tg-ink-0);
+  --neutral-85: var(--tg-ink-1);
+  --neutral-80: var(--tg-ink-2);
+  --neutral-70: var(--tg-ink-3);
+  --neutral-60: var(--tg-ink-5);
+  --neutral-50: var(--tg-ink-6);
+  --neutral-40: var(--tg-ink-7);
+  --neutral-30: var(--tg-ink-8);
+  --neutral-20: var(--tg-ink-9);
+  --neutral-10: var(--tg-ink-10);
+  --neutral-05: oklch(0.99 0.003 280);
+
+  --green-70: var(--tg-orange-dark);
+  --green-60: oklch(0.60 0.19 40);
+  --green-50: var(--tg-orange);
+  --green-40: var(--tg-orange-light);
+  --green-30: oklch(0.86 0.12 55);
+  --green-20: oklch(0.92 0.07 60);
+  --green-10: oklch(0.97 0.03 60);
+
+  --bs-primary: var(--tg-orange);
+  --bs-primary-rgb: 240, 110, 30;
+  --bs-link-color: var(--tg-orange);
+  --bs-link-hover-color: var(--tg-orange-light);
+  --link-color: var(--tg-orange);
+  --link-hover-color: var(--tg-orange-light);
+  --link-web: var(--tg-orange-dark);
+  --link-web-dark: var(--tg-orange-light);
+  --link-ui: var(--tg-orange-dark);
+  --link-ui-dark: var(--tg-orange-light);
+
+  --bs-body-font-family: "Outfit", system-ui, sans-serif;
+  --bs-font-sans-serif: "Outfit", system-ui, sans-serif;
+  --bs-border-radius: 0.75rem;
+  --bs-border-radius-sm: 0.5rem;
+  --bs-border-radius-lg: var(--tg-radius);
+  --border-radius-base: 0.75rem;
+  --border-radius-medium: 0.75rem;
+  --border-radius-large: var(--tg-radius);
+  --border-radius-full: 999px;
+}
+
+/* Le fond sombre toGæther : un voile orange discret en haut à gauche, comme l'accueil. */
+body {
+  font-family: "Outfit", system-ui, sans-serif !important;
+  font-feature-settings: "ss01";
+  letter-spacing: 0.005em;
+}
+/* Clair par défaut (réglage « light- » imposé aux comptes) : fond gris très léger, voile orange discret */
+body, .project-list-react, .ds-nav-page {
+  background:
+    radial-gradient(1100px 480px at -8% -18%, oklch(0.705 0.213 47.6 / 0.07), transparent 60%),
+    oklch(0.975 0.002 280) !important;
+  color: oklch(0.15 0.01 280);
+}
+
+/* ── Boutons : pilules, primaire orange ────────────────────────────── */
+.btn { border-radius: 999px !important; font-weight: 600; letter-spacing: 0.01em; }
+.btn-primary, .btn-primary:focus {
+  background: var(--tg-orange) !important; border-color: var(--tg-orange) !important; color: #fff !important;
+  box-shadow: 0 6px 18px -8px oklch(0.692 0.19 46.6 / 0.8);
+}
+.btn-primary:hover { background: var(--tg-orange-light) !important; border-color: var(--tg-orange-light) !important; }
+.btn-secondary { border-color: var(--border-divider-themed) !important; }
+.form-control, .form-select, .input-group, .search-input-container input {
+  border-radius: 999px !important;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--tg-orange) !important;
+  box-shadow: 0 0 0 3px var(--tg-orange-wash) !important;
+}
+.form-check-input:checked { background-color: var(--tg-orange) !important; border-color: var(--tg-orange) !important; }
+.badge.bg-primary, .badge-new, .badge.bg-info { background: var(--tg-orange-wash) !important; color: var(--tg-orange) !important; }
+
+/* ── Liste des projets ─────────────────────────────────────────────── */
+.project-list-react h1, .project-list-title, .project-list-main-react h1 {
+  font-weight: 800 !important;
+  font-size: 2.1rem !important;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+/* Barre latérale : rail sombre, entrées en italique comme la régie, active en orange */
+.project-list-sidebar-wrapper-react, .ds-nav-sidebar, .project-list-sidebar-react {
+  background: oklch(0.99 0 0) !important;
+  border-right: 1px solid var(--tg-ink-8) !important;
+}
+.project-list-sidebar-react .nav-link, .ds-nav-sidebar .nav-link, .project-list-sidebar-react a {
+  border-radius: 0 !important;
+  font-style: italic;
+  font-weight: 500;
+}
+.project-list-sidebar-react .active > a, .project-list-sidebar-react .nav-link.active,
+.ds-nav-sidebar .active > a, .ds-nav-sidebar .nav-link.active, .project-list-sidebar-react li.active {
+  background: transparent !important;
+  color: var(--tg-orange) !important;
+  box-shadow: inset 2px 0 0 var(--tg-orange);
+}
+.project-list-sidebar-react h2, .project-list-sidebar-react .dropdown-header,
+.ds-nav-sidebar h2, .ds-nav-sidebar .sidebar-tags-header, .tags-header {
+  color: var(--tg-orange) !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+}
+.project-list-sidebar-react .new-project-button, .ds-nav-sidebar .new-project-button {
+  border-radius: 999px !important;
+}
+
+/* Tableau : carte à filet fin, en-têtes en capitales espacées */
+.project-dash-table, .project-list-main-react .card, .project-list-table {
+  background: oklch(0.995 0.001 280) !important;
+  border: 1px solid var(--tg-ink-8) !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -20px rgb(20 10 40 / 0.18);
+  border-radius: var(--tg-radius) !important;
+  overflow: hidden;
+}
+.project-dash-table thead th, .project-list-header-row th, .project-dash-table th {
+  background: transparent !important;
+  color: oklch(0.5 0.02 280) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--tg-ink-8) !important;
+}
+.project-dash-table td { border-color: var(--tg-ink-9) !important; background: transparent !important; }
+.project-dash-table tbody tr { transition: background .15s ease; }
+.project-dash-table tbody tr:hover { background: oklch(0.705 0.213 47.6 / 0.06) !important; }
+.project-dash-table td a, .project-dash-table .dash-cell-name a {
+  font-weight: 600;
+  color: var(--content-primary-themed) !important;
+  text-decoration: none !important;
+}
+.project-dash-table td a:hover { color: var(--tg-orange) !important; }
+.project-dash-table .dash-cell-date, .project-dash-table .dash-cell-owner { color: oklch(0.5 0.02 280) !important; }
+.project-dash-table .dash-cell-actions button, .project-dash-table .dash-cell-actions a { color: oklch(0.55 0.02 280) !important; }
+.project-dash-table .dash-cell-actions button:hover, .project-dash-table .dash-cell-actions a:hover { color: var(--tg-orange) !important; }
+
+/* Étiquettes : pastilles façon toGæther */
+.tag-label, .badge-tag, .badge.badge-tag {
+  border-radius: 999px !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Barre du haut, menus, modales ─────────────────────────────────── */
+.navbar, .navbar-default, .ds-nav-top, header.toolbar, .toolbar-header, .ide-redesign-toolbar {
+  background: oklch(0.99 0 0) !important;
+  border-bottom: 1px solid var(--tg-ink-8) !important;
+}
+.navbar-brand, .navbar-title { font-weight: 800 !important; letter-spacing: -0.01em; }
+.dropdown-menu, .modal-content, .popover {
+  border-radius: var(--tg-radius) !important;
+  border: 1px solid var(--border-divider-themed) !important;
+  box-shadow: 0 24px 60px -24px rgb(0 0 0 / 0.55) !important;
+}
+.modal-title { font-weight: 800; letter-spacing: -0.01em; }
+.dropdown-item:hover, .dropdown-item:focus { background: var(--tg-orange-wash) !important; color: var(--tg-orange) !important; }
+
+/* ── Éditeur : barre, arborescence, onglets ────────────────────────── */
+.ide-redesign-toolbar, .toolbar.toolbar-header, .ide-react-main .toolbar {
+  font-weight: 600;
+}
+.ide-redesign-toolbar .toolbar-project-title, .toolbar-header .name { font-weight: 800 !important; letter-spacing: -0.01em; }
+.file-tree, .ide-react-file-tree-panel, .ide-rail, .ide-redesign-rail {
+  background: oklch(0.99 0 0) !important;
+}
+.file-tree .selected > .entity > .entity-name, .file-tree li.selected > .entity,
+.ide-redesign-rail .ide-rail-tab-link.active, .ide-rail-tab-link.active {
+  background: var(--tg-orange-wash) !important;
+  color: var(--tg-orange) !important;
+  box-shadow: inset 2px 0 0 var(--tg-orange);
+}
+.pdf-viewer .toolbar-pdf, .pdf .toolbar { background: oklch(0.99 0 0) !important; border-bottom: 1px solid var(--tg-ink-8); }
+.compile-button, .btn-recompile, .compile-button-group .btn {
+  background: var(--tg-orange) !important; border-color: var(--tg-orange) !important; color: #fff !important;
+}
+.compile-button-group { border-radius: 999px !important; overflow: hidden; }
+
+/* ── Connexion / pages de compte ───────────────────────────────────── */
+.login-register-container, .card.card-lg, .account-settings .card {
+  border-radius: calc(var(--tg-radius) + 4px) !important;
+  border: 1px solid var(--border-divider-themed) !important;
+}
+.login-register-container h1, .page-header h1, .content h1, .card-title {
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+}
+
+/* ── Défilement et sélection ───────────────────────────────────────── */
+::selection { background: oklch(0.692 0.19 46.6 / 0.35); }
+* { scrollbar-color: var(--tg-ink-8) transparent; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   « Deux plans, sans filet » (demande du 24/09/2026) — comme le main de toGæther :
+   plan 1 = page (barre du haut + barre latérale, même fond, AUCUNE bordure) ;
+   plan 2 = le contenu, panneau blanc arrondi posé dessus.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root { --tg-plane: oklch(0.962 0.004 280); --tg-panel: oklch(0.998 0.001 280); }
+
+body, .project-ds-nav-page, .project-list-wrapper,
+nav.navbar-main, .navbar-default, .project-list-sidebar-wrapper-react, .project-list-sidebar-react, .ds-nav-sidebar {
+  background: var(--tg-plane) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.project-list-wrapper { padding: 4px 16px 16px 4px; }
+.project-ds-nav-content-and-messages {
+  background: var(--tg-panel) !important;
+  border-radius: 1.5rem !important;
+  box-shadow:
+    0 0 0 1px rgb(20 10 40 / 0.035),
+    0 2px 6px rgb(20 10 40 / 0.05),
+    0 18px 40px -12px rgb(20 10 40 / 0.16),
+    0 40px 90px -30px rgb(20 10 40 / 0.22) !important;
+  overflow: auto;
+}
+/* L'intérieur du panneau reste blanc : la règle de fond de page ne doit pas s'y appliquer */
+.project-ds-nav-content-and-messages .project-list-react,
+.project-ds-nav-content-and-messages .project-list-main-react,
+.project-ds-nav-content-and-messages .project-ds-nav-content { background: transparent !important; }
+/* Dans le panneau, les cartes gardent un filet très léger et perdent leur ombre */
+.project-dash-table, #tg-liked { box-shadow: none !important; border-color: oklch(0.93 0.006 280) !important; }
+
+/* Typographie : Outfit partout sauf le code */
+h1, h2, h3, h4, h5, h6, .btn, button, input, select, textarea, .dropdown-menu, .modal, .tooltip, .popover, .nav-link, .navbar {
+  font-family: "Outfit", system-ui, sans-serif !important;
+}
+.cm-content, .cm-gutters, code, pre, kbd, samp { font-family: ui-monospace, "SF Mono", Menlo, monospace !important; }
+.ol-cm-toolbar, .editor-toggle-switch, .editor-toggle-switch label { font-family: "Outfit", system-ui, sans-serif !important; }
+/* Les icônes d'Overleaf sont des ligatures de police : ne jamais leur imposer Outfit */
+.material-symbols { font-family: "Material Symbols Rounded" !important; }
+.material-symbols.unfilled { font-family: "Material Symbols Outlined" !important; }
+.fa, [class^="fa-"], [class*=" fa-"] { font-family: "FontAwesome" !important; }
+.project-list-title { font-weight: 800 !important; letter-spacing: -0.02em !important; }
+.table-header-sort-btn {
+  font-size: 0.7rem !important; font-weight: 700 !important; letter-spacing: 0.14em; text-transform: uppercase;
+  color: oklch(0.5 0.02 280) !important;
+}
+
+/* Compte / Admin : pilule discrète, pas un bouton d'action */
+.nav-item-account .btn-primary, .navbar .btn-primary, .navbar .dropdown-toggle.btn-primary,
+.project-list-sidebar-react .btn-primary.dropdown-toggle, .ds-nav-sidebar-lower .btn-primary {
+  background: transparent !important;
+  border: 1px solid oklch(0.88 0.01 280) !important;
+  color: oklch(0.15 0.01 280) !important;
+  box-shadow: none !important;
+}
+.nav-item-account .btn-primary:hover, .navbar .btn-primary:hover,
+.project-list-sidebar-react .btn-primary.dropdown-toggle:hover, .ds-nav-sidebar-lower .btn-primary:hover {
+  border-color: var(--tg-orange) !important; color: var(--tg-orange) !important;
+}
+
+/* Éditeur : même logique — barre d'outils et rail sur le plan de page, sans filet */
+.ide-redesign-toolbar, .toolbar-header, .ide-rail, .ide-redesign-rail, .ide-react-file-tree-panel, .file-tree,
+.ide-redesign-main .toolbar, .ide-react-main .toolbar {
+  background: var(--tg-plane) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   États interactifs (24/09/2026) — une seule grammaire, celle de toGæther :
+   repos = transparent · survol = gris léger · sélection = lavis orange + encre orange
+   orange PLEIN réservé aux actions principales (Recompile, Share, New project).
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  --tg-hover: oklch(0.93 0.006 280);
+  --tg-select: oklch(0.705 0.213 47.6 / 0.12);
+  --tg-select-ink: oklch(0.58 0.19 42);
+  --tg-ink: oklch(0.15 0.01 280);
+  --tg-ink-soft: oklch(0.45 0.02 280);
+}
+
+/* — Rail de l'éditeur : icônes sans fond, trait orange à gauche pour l'onglet ouvert — */
+.ide-rail { padding-top: 6px !important; }
+.ide-rail .ide-rail-tab-link, .ide-rail .ide-rail-tab-button {
+  position: relative;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  color: var(--tg-ink-soft) !important;
+  transition: background .15s ease, color .15s ease;
+}
+.ide-rail .ide-rail-tab-link::after, .ide-rail .ide-rail-tab-link.open-rail::after { display: none !important; }
+.ide-rail .ide-rail-tab-link:hover, .ide-rail .ide-rail-tab-button:hover { background: var(--tg-hover) !important; color: var(--tg-ink) !important; }
+.ide-rail .ide-rail-tab-link.active, .ide-rail .ide-rail-tab-link[aria-selected=true] {
+  background: var(--tg-select) !important;
+  color: var(--tg-select-ink) !important;
+}
+.ide-rail .ide-rail-tab-link.active::before, .ide-rail .ide-rail-tab-link[aria-selected=true]::before {
+  content: ""; position: absolute; left: -6px; top: 8px; bottom: 8px; width: 3px; border-radius: 3px;
+  background: var(--tg-orange);
+}
+
+/* — Barre du haut de l'éditeur : menus et icônes en fantôme, Share en orange plein — */
+.ide-redesign-toolbar .ide-redesign-toolbar-button-subdued,
+.ide-redesign-toolbar .ide-redesign-toolbar-dropdown-toggle-subdued,
+.ide-redesign-toolbar .menu-bar-toggle {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--tg-ink) !important;
+  font-weight: 500 !important;
+}
+.ide-redesign-toolbar .ide-redesign-toolbar-button-subdued:hover,
+.ide-redesign-toolbar .menu-bar-toggle:hover,
+.ide-redesign-toolbar .show > .dropdown-toggle, .ide-redesign-toolbar .dropdown-toggle.show {
+  background: var(--tg-hover) !important;
+}
+.ide-redesign-toolbar .ide-redesign-toolbar-project-dropdown-toggle { font-weight: 800 !important; letter-spacing: -0.01em; }
+.ide-redesign-toolbar .ide-redesign-toolbar-button-icon { color: var(--tg-ink-soft) !important; }
+.ide-redesign-toolbar .ide-redesign-toolbar-button-icon:hover { color: var(--tg-ink) !important; }
+.ide-redesign-toolbar .btn-primary.btn-sm:not(.ide-redesign-toolbar-button-subdued) {  /* Share */
+  background: var(--tg-orange) !important; border: 0 !important; color: #fff !important;
+  box-shadow: 0 6px 16px -8px oklch(0.692 0.19 46.6 / 0.8) !important;
+}
+.ide-redesign-toolbar .btn-primary.btn-sm:not(.ide-redesign-toolbar-button-subdued):hover { background: var(--tg-orange-light) !important; }
+
+/* — Barres d'outils de l'éditeur et du PDF : boutons fantômes — */
+.ol-cm-toolbar-button, .pdf-toolbar-btn:not(.compile-button):not(.compile-dropdown-toggle), .btn-ghost, .file-tree-toolbar-action-button, .entity-menu-toggle {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  border-radius: 10px !important;
+  color: var(--tg-ink-soft) !important;
+}
+.ol-cm-toolbar-button:hover, .pdf-toolbar-btn:not(.compile-button):not(.compile-dropdown-toggle):hover, .btn-ghost:hover,
+.file-tree-toolbar-action-button:hover, .entity-menu-toggle:hover {
+  background: var(--tg-hover) !important;
+  color: var(--tg-ink) !important;
+}
+.ol-cm-toolbar-button.active, .ol-cm-toolbar-button[aria-pressed=true] { background: var(--tg-select) !important; color: var(--tg-select-ink) !important; }
+.pdf-toolbar, .toolbar-pdf { background: var(--tg-plane) !important; border: 0 !important; }
+.compile-button-group .btn { box-shadow: none !important; }
+.compile-button-group { box-shadow: 0 6px 16px -8px oklch(0.692 0.19 46.6 / 0.8); }
+
+/* — Arborescence des fichiers — */
+.file-tree .entity > .entity-name, .file-tree li > .entity { border-radius: 10px !important; }
+.file-tree li:not(.selected) > .entity:hover, .file-tree .entity-name:hover { background: var(--tg-hover) !important; }
+.file-tree li.selected > .entity, .file-tree li.selected > .entity > .entity-name,
+.file-tree .selected > .entity > .entity-name {
+  background: var(--tg-select) !important;
+  color: var(--tg-select-ink) !important;
+  box-shadow: none !important;
+  font-weight: 600;
+}
+.file-tree li.selected > .entity .material-symbols, .file-tree li.selected > .entity .entity-menu-toggle { color: var(--tg-select-ink) !important; }
+
+/* — Onglets de fichiers ouverts — */
+.editor-tab, .ide-redesign-editor-tab, [class*=editor-tab] { border-radius: 10px 10px 0 0 !important; }
+
+/* — Liste des projets : barre latérale et actions — */
+.project-list-sidebar-react .nav-link, .project-list-sidebar-react a, .ds-nav-sidebar .nav-link {
+  border-radius: 10px !important;
+  transition: background .15s ease, color .15s ease;
+}
+.project-list-sidebar-react .nav-link:hover, .project-list-sidebar-react li:not(.active) > a:hover, .ds-nav-sidebar .nav-link:hover {
+  background: var(--tg-hover) !important; color: var(--tg-ink) !important;
+}
+.project-list-sidebar-react li.active > a, .project-list-sidebar-react .nav-link.active, .ds-nav-sidebar .nav-link.active {
+  background: var(--tg-select) !important;
+  color: var(--tg-select-ink) !important;
+  box-shadow: none !important;
+  font-weight: 600;
+}
+.project-dash-table .dash-cell-actions .btn, .project-dash-table .dash-cell-actions button {
+  border-radius: 10px !important; background: transparent !important; border: 0 !important;
+}
+.project-dash-table .dash-cell-actions .btn:hover, .project-dash-table .dash-cell-actions button:hover { background: var(--tg-hover) !important; }
+.project-dash-table tbody tr.selected, .project-dash-table tbody tr:has(input:checked) { background: var(--tg-select) !important; }
+
+/* — Menus déroulants : survol gris, élément actif orange — */
+.dropdown-item { border-radius: 8px !important; }
+.dropdown-menu { padding: 6px !important; }
+.dropdown-item:hover, .dropdown-item:focus { background: var(--tg-hover) !important; color: var(--tg-ink) !important; }
+.dropdown-item.active, .dropdown-item:active, .dropdown-item[aria-checked=true] { background: var(--tg-select) !important; color: var(--tg-select-ink) !important; }
+
+/* — Boutons secondaires génériques : contour fin, survol gris — */
+.btn-secondary, .btn-default, .btn-outline-secondary {
+  background: transparent !important;
+  border: 1px solid oklch(0.88 0.01 280) !important;
+  color: var(--tg-ink) !important;
+  box-shadow: none !important;
+}
+.btn-secondary:hover, .btn-default:hover, .btn-outline-secondary:hover { background: var(--tg-hover) !important; }
+.btn:focus-visible, .nav-link:focus-visible, button:focus-visible { outline: 2px solid var(--tg-orange) !important; outline-offset: 2px; box-shadow: none !important; }
+
+/* — Poignées de redimensionnement des panneaux : sur le plan de page, trait orange au survol — */
+[data-panel-resize-handle-id], .horizontal-resize-handle, .vertical-resize-handle {
+  background: var(--tg-plane) !important;
+  border: 0 !important;
+}
+[data-panel-resize-handle-id]:hover, [data-panel-resize-handle-id][data-resize-handle-active],
+.horizontal-resize-handle:hover, .vertical-resize-handle:hover { background: var(--tg-select) !important; }
+[data-panel-resize-handle-id] .custom-toggler, .custom-toggler, .synctex-controls .btn {
+  background: var(--tg-panel) !important; color: var(--tg-ink-soft) !important;
+  border: 1px solid oklch(0.9 0.008 280) !important; border-radius: 999px !important; box-shadow: 0 2px 6px rgb(20 10 40 / .06) !important;
+}
+[data-panel-resize-handle-id] .custom-toggler:hover, .custom-toggler:hover, .synctex-controls .btn:hover { color: var(--tg-orange) !important; border-color: var(--tg-orange) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Éditeur façon tableau de bord (24/09/2026) : plan de page BLANC (barre, rail,
+   arborescence) ; éditeur + aperçu réunis dans UNE carte arrondie à ombre.
+   Le retrait passe par un padding du panneau (pas de marge : les largeurs des
+   panneaux redimensionnables sont calculées en %, une marge ferait déborder).
+   ═══════════════════════════════════════════════════════════════════════ */
+#ide-root { --tg-plane: #ffffff; }
+#ide-root, #ide-root .ide-redesign-main, #ide-root .ide-redesign-body, #ide-root .ide-redesign-inner { background: #ffffff !important; }
+
+/* Le panneau coupe tout ce qui dépasse (overflow des panneaux redimensionnables) :
+   l'ombre doit tenir DANS le padding, sinon elle apparaît en bande grise tronquée. */
+#ide-redesign-editor-and-pdf-panel {
+  padding: 4px 16px 16px 12px;
+  background: #ffffff !important;
+}
+#ide-redesign-editor-and-pdf-panel > div {
+  border-radius: 1.5rem !important;
+  overflow: hidden !important;
+  background: var(--tg-panel) !important;
+  box-shadow:
+    0 0 0 1px rgb(20 10 40 / 0.06),
+    0 1px 3px rgb(20 10 40 / 0.06),
+    0 6px 14px -6px rgb(20 10 40 / 0.16) !important;   /* portée max : 14 px en bas, 8 px sur les côtés */
+}
+#ide-redesign-editor-panel, #ide-redesign-editor-panel .ide-redesign-editor-container,
+#ide-redesign-editor-panel .ide-redesign-editor-content, #ide-redesign-editor-panel .cm-editor { background: var(--tg-panel) !important; }
+#ide-redesign-editor-panel .cm-gutters { background: var(--tg-panel) !important; border-right: 1px solid oklch(0.94 0.006 280) !important; }
+/* Barres internes à la carte : même fond que la carte, filet très léger */
+#ide-redesign-editor-panel .ol-cm-toolbar, #ide-redesign-editor-panel [class*=editor-tabs], #ide-redesign-editor-panel [role=tablist],
+#ide-redesign-pdf-panel .toolbar-pdf, #ide-redesign-pdf-panel .pdf-toolbar {
+  background: var(--tg-panel) !important;
+  border-bottom: 1px solid oklch(0.94 0.006 280) !important;
+}
+/* Fond de l'aperçu : gris très clair pour détacher les pages blanches */
+#ide-redesign-pdf-panel .pdf, #ide-redesign-pdf-panel .pdf-viewer, #ide-redesign-pdf-panel .pdfjs-viewer { background: oklch(0.96 0.004 280) !important; }
+/* Poignée entre éditeur et aperçu, à l'intérieur de la carte */
+#ide-redesign-editor-and-pdf-panel [data-panel-resize-handle-id] { background: oklch(0.955 0.005 280) !important; }
+/* Arborescence et rail sur le plan blanc */
+#ide-root .ide-rail, #ide-root .file-tree, #ide-root .ide-react-file-tree-panel, #ide-root .ide-redesign-toolbar,
+#ide-root [id*=file-tree], #ide-root .outline-container, #ide-root .outline-pane { background: #ffffff !important; }

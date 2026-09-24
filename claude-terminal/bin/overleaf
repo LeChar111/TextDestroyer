@@ -1,0 +1,200 @@
+#!/usr/bin/env node
+// overleaf — lire / modifier un document d'Overleaf local depuis le terminal Claude.
+// Passe par la passerelle interne (nginx d'Overleaf, port 8082, jeton), qui relaie le
+// service document-updater : une modification apparaît EN DIRECT dans l'éditeur ouvert.
+//
+//   overleaf pull <projectId> <docId> [chemin/dans/le/projet.tex]   → copie locale éditable
+//   overleaf push <fichier local> [--force]                           → renvoie dans Overleaf
+//   overleaf status <fichier local>                                   → local vs Overleaf
+//   overleaf projects                                                  → projets (id, nom)
+//   overleaf ls <projectId>                                            → documents (id, chemin)
+//   overleaf grep <projectId> <motif> [--i]                            → recherche dans tous les documents
+//   overleaf upload <projectId> <fichier local> [chemin/dans/le/projet] [--force] → ajoute un fichier au projet
+//   overleaf compile <projectId> [chemin/racine.tex] [--clean]         → compile une copie, résume les erreurs
+// L'arborescence (ids ↔ chemins) est lue dans Mongo, en LECTURE SEULE ; les contenus passent par la passerelle.
+// upload / compile passent par l'API privée d'Overleaf, appelée DANS le conteneur sharelatex (docker exec) :
+// son mot de passe y est lu sur place et ne sort jamais du conteneur.
+'use strict'
+const fs = require('fs'), path = require('path')
+const BASE = process.env.OVERLEAF_BRIDGE_URL || 'http://sharelatex:8082'
+const TOKEN = process.env.OVERLEAF_BRIDGE_TOKEN || ''
+const ROOT = process.env.OVERLEAF_SYNC_DIR || path.join(process.env.HOME, 'overleaf')
+const MAP = path.join(ROOT, '.map.json')
+const die = m => { console.error('overleaf : ' + m); process.exit(1) }
+const readMap = () => { try { return JSON.parse(fs.readFileSync(MAP, 'utf8')) } catch { return {} } }
+const writeMap = m => { fs.mkdirSync(ROOT, { recursive: true }); fs.writeFileSync(MAP, JSON.stringify(m, null, 2)) }
+const isId = s => /^[0-9a-f]{24}$/.test(s || '')
+
+async function api(method, pid, did, body) {
+  const r = await fetch(`${BASE}/project/${pid}/doc/${did}`, {
+    method, headers: { 'X-Tg-Token': TOKEN, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  }).catch(e => die('passerelle injoignable (' + e.message + ')'))
+  if (!r.ok) die(`${method} refusé : HTTP ${r.status} ${await r.text().catch(() => '')}`.trim())
+  return method === 'GET' ? r.json() : null
+}
+
+async function pull([pid, did, rel]) {
+  if (!isId(pid) || !isId(did)) die('usage : overleaf pull <projectId> <docId> [chemin.tex]')
+  const doc = await api('GET', pid, did)
+  const local = path.join(ROOT, pid, rel ? rel.replace(/^\/+/, '') : did + '.tex')
+  fs.mkdirSync(path.dirname(local), { recursive: true })
+  const text = doc.lines.join('\n')
+  fs.writeFileSync(local, text)
+  const m = readMap(); m[local] = { pid, did, rel: rel || null, version: doc.version, pulled: text }; writeMap(m)
+  console.log(local)
+  console.error(`(version ${doc.version}, ${doc.lines.length} lignes) — modifie ce fichier puis : overleaf push '${local}'`)
+}
+
+async function push([file, flag]) {
+  const local = path.resolve(file || '')
+  const e = readMap()[local]
+  if (!e) die('fichier inconnu : récupère-le d’abord avec « overleaf pull »')
+  const text = fs.readFileSync(local, 'utf8')
+  const remote = await api('GET', e.pid, e.did)
+  const remoteText = remote.lines.join('\n')
+  if (remoteText !== e.pulled && flag !== '--force') {
+    die(`le document a changé dans Overleaf depuis le pull (version ${e.version} → ${remote.version}). ` +
+        `Refais « overleaf pull ${e.pid} ${e.did}${e.rel ? " '" + e.rel + "'" : ''} », réapplique la modification, puis push. (--force écrase)`)
+  }
+  if (text === remoteText) { console.log('aucune différence : rien à envoyer'); return }
+  await api('POST', e.pid, e.did, { lines: text.split('\n'), source: 'togaether-claude', undoing: false })
+  const after = await api('GET', e.pid, e.did)
+  const m = readMap(); m[local] = { ...e, version: after.version, pulled: after.lines.join('\n') }; writeMap(m)
+  console.log(`envoyé dans Overleaf (version ${after.version}) — visible dans l’éditeur`)
+}
+
+async function status([file]) {
+  const local = path.resolve(file || ''); const e = readMap()[local]
+  if (!e) die('fichier inconnu')
+  const remote = await api('GET', e.pid, e.did)
+  const txt = fs.readFileSync(local, 'utf8'), r = remote.lines.join('\n')
+  console.log(`local ${txt === e.pulled ? 'inchangé' : 'modifié'} · Overleaf ${r === e.pulled ? 'inchangé' : 'modifié'} depuis le pull (version ${remote.version})`)
+}
+
+// ── Arborescence depuis Mongo (lecture seule) ──────────────────────────────
+async function withDb(fn) {
+  let MongoClient
+  try { ({ MongoClient } = require('mongodb')) } catch { die('pilote mongodb absent de l’image') }
+  const client = new MongoClient(process.env.OVERLEAF_MONGO_URL || 'mongodb://mongo:27017/sharelatex', { serverSelectionTimeoutMS: 4000 })
+  try { await client.connect(); return await fn(client.db()) } finally { await client.close().catch(() => {}) }
+}
+function flatten(folder, prefix = '', out = []) {
+  for (const d of folder.docs || []) out.push({ id: String(d._id), path: prefix + d.name, type: 'doc' })
+  for (const f of folder.fileRefs || []) out.push({ id: String(f._id), path: prefix + f.name, type: 'file' })
+  for (const sub of folder.folders || []) flatten(sub, prefix + sub.name + '/', out)
+  return out
+}
+async function docsOf(pid) {
+  if (!isId(pid)) die('identifiant de projet attendu (24 caractères hexadécimaux) — voir « overleaf projects »')
+  const { ObjectId } = require('mongodb')
+  const p = await withDb(db => db.collection('projects').findOne({ _id: new ObjectId(pid) }, { projection: { name: 1, rootFolder: 1, rootDoc_id: 1, compiler: 1 } }))
+  if (!p) die('projet introuvable')
+  return { name: p.name, entries: flatten(p.rootFolder[0]), rootDocId: p.rootDoc_id ? String(p.rootDoc_id) : null, compiler: p.compiler || 'pdflatex' }
+}
+async function projects() {
+  const list = await withDb(db => db.collection('projects').find({ 'trashed.0': { $exists: false }, archived: { $ne: true } }, { projection: { name: 1, lastUpdated: 1 } }).sort({ lastUpdated: -1 }).toArray())
+  for (const p of list) console.log(`${p._id}  ${p.name}`)
+}
+async function ls([pid]) {
+  const { name, entries } = await docsOf(pid)
+  console.error(`# ${name}`)
+  for (const e of entries) console.log(`${e.type === 'doc' ? e.id : '(fichier)               '}  ${e.path}`)
+}
+async function grep([pid, pattern, flag]) {
+  if (!pattern) die('usage : overleaf grep <projectId> <motif> [--i]')
+  const re = new RegExp(pattern, flag === '--i' ? 'i' : '')
+  const { entries } = await docsOf(pid)
+  let n = 0
+  for (const e of entries.filter(x => x.type === 'doc')) {
+    const doc = await api('GET', pid, e.id)
+    doc.lines.forEach((l, i) => { if (re.test(l)) { n++; console.log(`${e.path}:${i + 1}: ${l}`) } })
+  }
+  console.error(`${n} occurrence(s) — docId pour « overleaf pull » : overleaf ls ${pid}`)
+}
+
+// ── API privée, depuis le conteneur sharelatex ─────────────────────────────
+const { spawnSync } = require('child_process')
+const SHARELATEX = process.env.OVERLEAF_CONTAINER || 'sharelatex'
+function inSharelatex(script, args = [], input) {
+  const r = spawnSync('docker', ['exec', '-i', SHARELATEX, 'bash', '-c', script, '_', ...args],
+    { input, maxBuffer: 64 * 1024 * 1024 })
+  if (r.error) die('docker indisponible (' + r.error.message + ')')
+  return { code: r.status, out: r.stdout.toString(), err: r.stderr.toString() }
+}
+const PRIVATE = 'PW=$(cat /etc/container_environment/WEB_API_PASSWORD); API=http://127.0.0.1:3000'
+const flags = a => ({ list: a.filter(x => !x.startsWith('--')), has: f => a.includes(f) })
+
+async function upload(argv) {
+  const { list: [pid, file, target], has } = flags(argv)
+  if (!isId(pid) || !file) die('usage : overleaf upload <projectId> <fichier local> [chemin/dans/le/projet] [--force]')
+  if (!fs.existsSync(file)) die('fichier introuvable : ' + file)
+  const rel = (target || path.basename(file)).replace(/^\/+/, '')
+  if (rel.split('/').some(seg => seg === '..' || seg === '')) die('chemin invalide : ' + rel)
+  const { entries } = await docsOf(pid)
+  const existing = entries.find(e => e.path === rel)
+  if (existing?.type === 'doc' && !has('--force'))
+    die(`« ${rel} » est un document existant : le modifier avec « overleaf pull ${pid} ${existing.id} '${rel}' » puis push (--force remplace tout le contenu)`)
+  const size = fs.statSync(file).size
+  if (size > 50 * 1024 * 1024) die('fichier de plus de 50 Mo')
+  const url = rel.split('/').map(encodeURIComponent).join('/')
+  const r = inSharelatex(`${PRIVATE}; curl -sS -w '\\n%{http_code}' -u overleaf:$PW -H 'X-Update-Source: togaether-claude' --data-binary @- "$API/project/$1/contents/$2"`, [pid, url], fs.readFileSync(file))
+  const [body, code] = [r.out.slice(0, r.out.lastIndexOf('\n')), r.out.slice(r.out.lastIndexOf('\n') + 1)]
+  if (code !== '200') die(`envoi refusé : HTTP ${code} ${body}${r.err}`.trim())
+  const { entityId } = JSON.parse(body)
+  console.log(`${existing ? 'remplacé' : 'ajouté'} : ${rel} (id ${entityId}) — visible dans l'arborescence`)
+  if (/\.(tex|bib|sty|cls|txt|md)$/i.test(rel)) console.error(`document : overleaf pull ${pid} ${entityId} '${rel}'`)
+}
+
+// Compile une COPIE du projet (zip de l'API privée) dans le conteneur, hors du PDF de l'éditeur :
+// sert à vérifier une modification. Racine : argument, sinon document principal du projet.
+// Moteur : « % !TEX program = … » de la racine, sinon celui du projet.
+async function compile(argv) {
+  const { list: [pid, root], has } = flags(argv)
+  if (!isId(pid)) die('usage : overleaf compile <projectId> [chemin/racine.tex] [--clean]')
+  const { name, entries, rootDocId, compiler } = await docsOf(pid)
+  const rootEntry = root ? entries.find(e => e.path === root.replace(/^\/+/, '')) : entries.find(e => e.id === rootDocId)
+  if (!rootEntry || rootEntry.type !== 'doc') die(root ? `document introuvable : ${root} (voir overleaf ls ${pid})` : 'pas de document principal : préciser la racine')
+  const head = (await api('GET', pid, rootEntry.id)).lines.slice(0, 12).join('\n')
+  const magic = (head.match(/^\s*%\s*!\s*TEX\s+(?:TS-)?program\s*=\s*(\w+)/im) || [])[1]
+  const engine = { xelatex: 'xelatex', lualatex: 'lualatex', pdflatex: 'pdf', latex: 'dvi' }[(magic || compiler).toLowerCase()] || 'pdf'
+  console.error(`# ${name} — ${rootEntry.path} (${magic || compiler})`)
+  const script = `${PRIVATE}; set -o pipefail
+    D=/var/lib/overleaf/tmp/tg-compile/$1; [ "$4" = clean ] && rm -rf "$D"; mkdir -p "$D"; cd "$D" || exit 90
+    curl -sSf -u overleaf:$PW "$API/internal/project/$1/zip" -o /tmp/tg-$1.zip || exit 91
+    unzip -oq /tmp/tg-$1.zip && rm -f /tmp/tg-$1.zip
+    R="$2"; cd "$(dirname "$R")" || exit 92; B=$(basename "$R" .tex)
+    S=$(date +%s%N)
+    latexmk -$3 -interaction=nonstopmode -file-line-error -f -jobname=output "$B.tex" > output.latexmk 2>&1; C=$?
+    echo "TG_TIME $(( ($(date +%s%N)-S)/1000000 ))"; echo "TG_CODE $C"; echo "TG_DIR $PWD"`
+  const r = inSharelatex(script, [pid, rootEntry.path, engine, has('--clean') ? 'clean' : ''])
+  const meta = k => (r.out.match(new RegExp('^TG_' + k + ' (.*)$', 'm')) || [])[1]
+  if (!meta('DIR')) die(`compilation impossible (code ${r.code}) ${r.err}`.trim())
+  const dir = meta('DIR')
+  const out = path.join(ROOT, 'compile', pid)
+  fs.mkdirSync(out, { recursive: true })
+  const log = inSharelatex('cat "$1/output.log"', [dir]).out
+  fs.writeFileSync(path.join(out, 'output.log'), log)
+  const pdf = spawnSync('docker', ['exec', SHARELATEX, 'cat', dir + '/output.pdf'], { maxBuffer: 256 * 1024 * 1024 })
+  const hasPdf = pdf.status === 0 && pdf.stdout.length > 0
+  if (hasPdf) fs.writeFileSync(path.join(out, 'output.pdf'), pdf.stdout)
+
+  // Résumé : erreurs « fichier:ligne: message » (-file-line-error), puis avertissements utiles.
+  const lines = log.split('\n')
+  const errors = []
+  lines.forEach((l, i) => {
+    const m = l.match(/^(\.?\/?[^:\s][^:]*\.(?:tex|sty|cls|bib|bbl)):(\d+): (.*)$/) || (l.startsWith('! ') ? [null, '?', '?', l.slice(2)] : null)
+    if (m) errors.push(`${m[1].replace(/^\.\//, '')}:${m[2]}: ${m[3]}${lines[i + 1]?.startsWith('l.') ? '  ⟶ ' + lines[i + 1].trim() : ''}`)
+  })
+  const count = re => lines.filter(l => re.test(l)).length
+  const pages = (log.match(/Output written on .*?\((\d+) pages?/) || [])[1]
+  console.log(`${errors.length ? '✗' : '✓'} ${errors.length} erreur(s) · ${count(/LaTeX Warning: (Reference|Citation) .* undefined/)} référence(s) indéfinie(s) · ` +
+    `${count(/^Overfull \\hbox/)} overfull hbox · ${count(/Warning/)} avertissement(s) · ${pages ? pages + ' page(s)' : 'pas de PDF'} · ${meta('TIME')} ms`)
+  for (const e of [...new Set(errors)].slice(0, 20)) console.log('  ' + e)
+  if (errors.length > 20) console.log(`  … ${errors.length - 20} de plus`)
+  console.log(`journal : ${path.join(out, 'output.log')}${hasPdf ? `\nPDF : ${path.join(out, 'output.pdf')}` : ''}`)
+  process.exitCode = errors.length ? 1 : 0
+}
+
+const [cmd, ...args] = process.argv.slice(2)
+;({ pull, push, status, projects, ls, grep, upload, compile }[cmd] || (() => die('commandes : projects, ls, grep, pull, push, status, upload, compile')))(args)

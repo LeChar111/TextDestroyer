@@ -1,0 +1,7 @@
+# Configuration latexmk du compilateur d'Overleaf (remplace /usr/local/share/latexmk/LatexMk de l'image).
+# equivalent to -gt option. Used to prevent latexmk from skipping recompilation
+# of output.log and output.pdf
+$go_mode = 3;
+# toGæther : compression 6 au lieu de 9 (défaut) pour xdvipdfmx. Les PNG sont recompressés à chaque
+# compilation : -z 6 gagne ~0,5 s par compilation pour un PDF ~1 % plus lourd (mesuré sur un document XeLaTeX de 15 pages avec images).
+$xdvipdfmx = 'xdvipdfmx -z 6 -E -o %D %O %S';

@@ -1,0 +1,19 @@
+.DS_Store
+.idea
+*.log
+tmp/
+*.swp
+
+config/**/*
+!config/.gitkeep
+
+data/**/*
+!data/.gitkeep
+
+# toGæther : config/ versionne l'override, overleaf.rc et version ; variables.env et config/togaether/
+# (jetons, réglages locaux) sont générés par « make config ».
+import/
+workspace/
+!config/docker-compose.override.yml
+!config/overleaf.rc
+!config/version

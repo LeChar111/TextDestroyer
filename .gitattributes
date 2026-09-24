@@ -1,0 +1,5 @@
+# Scripts et fichiers lus dans les conteneurs Linux : fins de ligne LF, même sous Windows.
+* text=auto eol=lf
+*.woff2 binary
+*.png binary
+*.pdf binary

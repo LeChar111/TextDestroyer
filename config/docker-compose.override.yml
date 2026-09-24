@@ -1,0 +1,53 @@
+# Surcharges toGæther (lues par bin/docker-compose)
+services:
+    sharelatex:
+        # Image publiée en amd64 seulement : émulée sur ARM (Rosetta sur Mac, QEMU/binfmt sur Linux ARM).
+        platform: linux/amd64
+        volumes:
+            - ../custom/overleaf.conf:/etc/nginx/sites-enabled/overleaf.conf:ro
+            - ../custom/togaether:/overleaf/togaether:ro
+            - ../custom/latexmk/LatexMk:/usr/local/share/latexmk/LatexMk:ro
+            # Généré par « make config » : jeton de la passerelle interne (map nginx)
+            - ../config/togaether/nginx-token.conf:/etc/nginx/togaether/nginx-token.conf:ro
+            # Compilation dans des volumes Docker plutôt que dans data/ (dossier de l'hôte) : bien plus rapide sous
+            # Docker Desktop (partage virtiofs), et plus d'expiration « disque bas ». Contenu jetable : caches seulement.
+            - overleaf-compiles:/var/lib/overleaf/data/compiles
+            - overleaf-output:/var/lib/overleaf/data/output
+            - overleaf-cache:/var/lib/overleaf/data/cache
+            - overleaf-tmp:/var/lib/overleaf/tmp
+
+    # Terminal Claude Code personnel, affiché dans Overleaf (panneau « Claude »).
+    # Non publié sur l'hôte : seul le nginx d'Overleaf le relaie, et seulement pour une session connectée.
+    claude-terminal:
+        build: ../claude-terminal
+        image: togaether/claude-terminal:local
+        container_name: claude-terminal
+        restart: unless-stopped
+        volumes:
+            - claude-home:/home/node
+            # Dossier de travail du terminal : TG_WORKSPACE (config/togaether/settings.env), défaut workspace/ du toolkit
+            - ${TG_WORKSPACE:-../workspace}:/workspace
+            # Le toolkit lui-même : Claude peut en modifier la configuration (voir claude-terminal/CLAUDE.md)
+            - ..:/toolkit
+            - ../claude-terminal/bin/overleaf:/usr/local/bin/overleaf:ro
+            - ../claude-terminal/CLAUDE.md:/etc/tg-claude/CLAUDE.md:ro
+            # Consignes personnelles facultatives : config/togaether/CLAUDE.local.md (non versionné)
+            - ../config/togaether:/etc/tg-claude/local:ro
+            # Socket Docker de l'hôte : Claude peut recharger nginx / redémarrer un conteneur après une modification
+            - /var/run/docker.sock:/var/run/docker.sock
+        # Groupe propriétaire du socket Docker : 0 sous Docker Desktop (Mac, Windows), celui de « docker » sous Linux
+        group_add:
+            - "${DOCKER_GID:-0}"
+        environment:
+            OVERLEAF_BRIDGE_URL: http://sharelatex:8082
+            OVERLEAF_MONGO_URL: mongodb://mongo:27017/sharelatex
+        # OVERLEAF_BRIDGE_TOKEN, généré par « make config »
+        env_file:
+            - ../config/togaether/terminal.env
+
+volumes:
+    claude-home:
+    overleaf-compiles:
+    overleaf-output:
+    overleaf-cache:
+    overleaf-tmp:
