@@ -488,3 +488,143 @@ h1, h2, h3, h4, h5, h6, .btn, button, input, select, textarea, .dropdown-menu, .
 /* Arborescence et rail sur le plan blanc */
 #ide-root .ide-rail, #ide-root .file-tree, #ide-root .ide-react-file-tree-panel, #ide-root .ide-redesign-toolbar,
 #ide-root [id*=file-tree], #ide-root .outline-container, #ide-root .outline-pane { background: #ffffff !important; }
+
+/* ── Pages d'authentification (login, register, reset) : panneau de marque + formulaire ── */
+body:has(main.content form[data-ol-async-form]) {
+  --tg-auth-gutter: 12px;
+  background: var(--tg-panel) !important;
+  min-height: 100vh;
+}
+body:has(main.content form[data-ol-async-form]) .navbar-main {
+  position: absolute; inset: var(--tg-auth-gutter) var(--tg-auth-gutter) auto; z-index: 5;
+  background: transparent !important;
+  padding: 1.25rem clamp(1.25rem, 3vw, 2.5rem) !important;
+}
+body:has(main.content form[data-ol-async-form]) .navbar-title {
+  color: #fff !important; font-size: 1.05rem; font-weight: 700 !important; letter-spacing: -0.01em;
+}
+body:has(main.content form[data-ol-async-form]) .navbar-toggler { color: #fff !important; border: 0 !important; }
+body:has(main.content form[data-ol-async-form]) .navbar-main .nav-link {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  color: var(--tg-ink-soft) !important; font-weight: 500 !important; padding: .45rem .9rem !important; border-radius: 10px !important;
+}
+body:has(main.content form[data-ol-async-form]) .navbar-main .nav-link:hover { background: var(--tg-hover) !important; color: var(--tg-ink) !important; }
+body:has(form[name=loginForm]) .navbar-main a[href="/login"],
+body:has(form[name=registerForm]) .navbar-main a[href="/register"] { display: none !important; }
+
+body:has(main.content form[data-ol-async-form]) main.content {
+  position: relative;
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  min-height: 100vh; margin: 0 !important; padding: 0 !important;
+}
+body:has(main.content form[data-ol-async-form]) main.content::before {
+  content: "Écrire du LaTeX,\A ensemble.";
+  white-space: pre-line;
+  grid-column: 1; grid-row: 1;
+  display: flex; align-items: flex-end;
+  margin: var(--tg-auth-gutter);
+  padding: clamp(2rem, 5vw, 4.5rem) clamp(2rem, 5vw, 4.5rem) calc(clamp(2rem, 5vw, 4.5rem) + 2.5rem);
+  border-radius: 1.75rem;
+  color: #fff;
+  font-size: clamp(2.6rem, 5vw, 4.75rem); font-weight: 800; line-height: .96; letter-spacing: -0.04em;
+  background:
+    radial-gradient(60% 55% at 85% 12%, oklch(0.705 0.213 47.6 / .55), transparent 70%),
+    radial-gradient(50% 45% at 8% 105%, oklch(0.68 0.22 300 / .35), transparent 70%),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / .035) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / .035) 0 1px, transparent 1px 44px),
+    oklch(0.17 0.02 280);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06);
+}
+body:has(main.content form[data-ol-async-form]) main.content::after {
+  content: "Overleaf local · compilation, projets partagés, terminal Claude";
+  position: absolute; left: calc(var(--tg-auth-gutter) + clamp(2rem, 5vw, 4.5rem)); bottom: calc(var(--tg-auth-gutter) + clamp(2rem, 5vw, 4.5rem));
+  max-width: 44%;
+  color: oklch(0.8 0.01 280); font-size: .9rem; font-weight: 500; letter-spacing: .01em;
+}
+
+body:has(main.content form[data-ol-async-form]) main.content > .container {
+  grid-column: 2; grid-row: 1;
+  display: flex; align-items: center; justify-content: center;
+  max-width: none; padding: 6rem clamp(1.5rem, 4vw, 3rem) 5rem;
+}
+body:has(main.content form[data-ol-async-form]) main.content > .container > .row { width: 100%; max-width: 400px; margin: 0; }
+body:has(main.content form[data-ol-async-form]) main.content > .container > .row > [class*=col-] {
+  flex: 0 0 100%; width: 100%; max-width: 100%; margin-left: 0 !important; padding: 0;
+}
+
+body:has(main.content form[data-ol-async-form]) .page-header { border: 0 !important; margin: 0 0 2rem !important; padding: 0 !important; }
+body:has(main.content form[data-ol-async-form]) .page-header h1 {
+  font-size: 2.25rem !important; font-weight: 800 !important; letter-spacing: -0.03em; line-height: 1.1; margin: 0 !important;
+}
+body:has(form[name=loginForm]) .page-header::after {
+  content: "Connectez-vous pour retrouver vos projets.";
+  display: block; margin-top: .5rem; color: var(--tg-ink-soft); font-size: 1rem;
+}
+
+body:has(main.content form[data-ol-async-form]) .form-group { margin-bottom: 1.1rem; }
+body:has(main.content form[data-ol-async-form]) .form-group label {
+  display: block; margin-bottom: .4rem;
+  color: var(--tg-ink); font-size: .82rem; font-weight: 600; letter-spacing: .01em;
+}
+body:has(main.content form[data-ol-async-form]) .form-control {
+  height: 3rem; padding: 0 1rem !important;
+  border-radius: 14px !important;
+  border: 1px solid oklch(0.9 0.008 280) !important;
+  background: oklch(0.978 0.003 280) !important;
+  color: var(--tg-ink) !important; font-size: .98rem;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+body:has(main.content form[data-ol-async-form]) .form-control:hover { border-color: oklch(0.82 0.012 280) !important; }
+body:has(main.content form[data-ol-async-form]) .form-control:focus {
+  background: #fff !important; border-color: var(--tg-orange) !important;
+  box-shadow: 0 0 0 4px var(--tg-orange-wash) !important;
+}
+body:has(main.content form[data-ol-async-form]) .form-control:-webkit-autofill,
+body:has(main.content form[data-ol-async-form]) .form-control:-webkit-autofill:hover,
+body:has(main.content form[data-ol-async-form]) .form-control:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--tg-ink);
+  box-shadow: 0 0 0 100px oklch(0.978 0.003 280) inset !important;
+  caret-color: var(--tg-ink);
+}
+body:has(main.content form[data-ol-async-form]) .form-control:-webkit-autofill:focus {
+  box-shadow: 0 0 0 100px #fff inset, 0 0 0 4px var(--tg-orange-wash) !important;
+}
+
+body:has(main.content form[data-ol-async-form]) .actions {
+  display: flex; flex-direction: column; align-items: stretch; gap: 1rem; margin-top: 1.75rem;
+}
+body:has(main.content form[data-ol-async-form]) .actions .btn-primary {
+  height: 3rem; border-radius: 14px !important; font-size: 1rem; font-weight: 600;
+  transition: background .15s ease, transform .1s ease, opacity .15s ease;
+}
+body:has(main.content form[data-ol-async-form]) .actions .btn-primary:active { transform: translateY(1px); }
+body:has(main.content form[data-ol-async-form]) .actions .btn-primary:disabled { opacity: .7 !important; }
+body:has(main.content form[data-ol-async-form]) .actions a {
+  float: none !important; align-self: center;
+  color: var(--tg-ink-soft) !important; font-size: .9rem; text-decoration: none !important;
+}
+body:has(main.content form[data-ol-async-form]) .actions a:hover { color: var(--tg-orange) !important; }
+body:has(main.content form[data-ol-async-form]) .notification { border-radius: 14px !important; }
+
+body:has(main.content form[data-ol-async-form]) .site-footer {
+  position: absolute; right: 0; bottom: 0; width: 47.6%;
+  background: transparent !important; border: 0 !important;
+}
+body:has(main.content form[data-ol-async-form]) .site-footer-content { padding: 1rem 1.5rem !important; }
+body:has(main.content form[data-ol-async-form]) .site-footer,
+body:has(main.content form[data-ol-async-form]) .site-footer a { color: oklch(0.6 0.015 280) !important; font-size: .78rem; }
+body:has(main.content form[data-ol-async-form]) .site-footer a:hover { color: var(--tg-orange) !important; }
+body:has(main.content form[data-ol-async-form]) .site-footer .copyright-notice {
+  margin: .35rem 0 0; font-size: .68rem !important; line-height: 1.45; color: oklch(0.68 0.012 280) !important;
+}
+
+@media (max-width: 991.98px) {
+  body:has(main.content form[data-ol-async-form]) main.content { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+  body:has(main.content form[data-ol-async-form]) main.content::before {
+    grid-row: 1; min-height: 240px; padding: 5rem 1.75rem 1.75rem; font-size: 2.4rem;
+  }
+  body:has(main.content form[data-ol-async-form]) main.content::after { display: none; }
+  body:has(main.content form[data-ol-async-form]) main.content > .container { grid-column: 1; grid-row: 2; padding: 2.5rem 1rem 4rem; }
+  body:has(main.content form[data-ol-async-form]) .navbar-main .nav-link { color: #fff !important; }
+  body:has(main.content form[data-ol-async-form]) .site-footer { position: static; width: auto; }
+}
