@@ -1,4 +1,6 @@
-<h1 align="center">toGæther · Overleaf local + Claude Code</h1>
+<h1 align="center">TextDestroyer</h1>
+
+<p align="center"><b>Overleaf local + Claude Code</b></p>
 
 <p align="center">
   Votre propre Overleaf, sur votre machine, avec <a href="https://claude.com/claude-code">Claude Code</a> branché directement dans l'éditeur.<br>
@@ -103,7 +105,7 @@ Prérequis :
 - sous Windows, **tout se fait dans WSL2**.
 
 ```bash
-git clone https://github.com/LeChar111/Overleaf_Destroyer.git overleaf-local && cd overleaf-local
+git clone https://github.com/LeChar111/TextDestroyer.git && cd TextDestroyer
 make install                       # vérifie, génère config/, construit les images (TeX Live : ~15 min la 1re fois)
 make start                         # démarre et ouvre http://localhost:8090
 make admin EMAIL=vous@exemple.org  # crée le compte administrateur (lien d'activation affiché)
