@@ -20,7 +20,9 @@ Tu tournes dans le conteneur Docker `claude-terminal`. `/workspace` = dossier de
 - Erreurs de compilation envoyées depuis le panneau des erreurs : `@~/overleaf/errors/<date>.md` (message, emplacement,
   extrait de source, commande pull) : corriger, puis `overleaf compile` pour vérifier.
 - Fichiers déposés ou collés dans le panneau : images sous `~/overleaf/images/`, autres sous `~/overleaf/files/` ; leur chemin arrive dans l'invite.
-  Un document glissé depuis l'arborescence Overleaf arrive comme `[Overleaf : « chemin » — overleaf pull …]` (le récupérer avec cette commande).
+  Un document glissé depuis l'arborescence Overleaf arrive comme `[Overleaf : « chemin » — overleaf pull …]` (le récupérer avec cette commande) ;
+  un dossier arrive comme `@~/overleaf/selection.md` (liste de ses documents avec leurs commandes pull) ; un texte de plusieurs lignes aussi.
+- Après un `overleaf push`, l'éditeur affiche un toast et recompile tout seul le document modifié après quelques secondes.
 
 ## Configurations de cet environnement (tu peux les modifier)
 Toutes sous `/toolkit/`. Les commandes `make …` se lancent sur l'HÔTE, pas dans ce conteneur (le dire à l'utilisateur).
@@ -30,6 +32,7 @@ Toutes sous `/toolkit/`. Les commandes `make …` se lancent sur l'HÔTE, pas da
 | `custom/togaether/likes.js` | likes de projets | immédiat |
 | `custom/togaether/claude.js` | panneau / fenêtre de ce terminal, actions sur la sélection, erreurs → Claude | immédiat |
 | `custom/togaether/compile-current.js` | compiler le document ouvert (+ `window.tgOverleaf` partagé) | immédiat |
+| `custom/togaether/external-update.js` | modification externe (push) : toast + recompilation au lieu de la fenêtre bloquante (chargé en premier) | immédiat |
 | `custom/togaether/figure-drop.js` | figure express : image déposée / collée dans l'éditeur → `figures/` + `\begin{figure}` | immédiat |
 | `custom/latexmk/LatexMk` | réglages latexmk du compilateur (xdvipdfmx -z 6) | `docker restart sharelatex` |
 | `custom/overleaf.conf` | nginx d'Overleaf (injection, relais terminal, passerelle 8082) | MODIFIER SUR PLACE (pas `sed -i` : fichier monté) puis `docker exec sharelatex nginx -t && docker exec sharelatex nginx -s reload` |

@@ -46,8 +46,12 @@
     docPath: id => tree()?.byId.get(id) || null,
     docId: path => tree()?.byPath.get(path) || null,
     entity: path => tree()?.all.get(path) || null,
+    entries: () => [...(tree()?.all || [])].filter(([p]) => p).map(([path, e]) => ({ path, ...e })),
     compileRoot: () => target(),
+    /** Compile la racine d'un document donné (pas forcément l'ouvert) : cible à usage unique, puis clic sur Recompile. */
+    compileDoc: id => { nextFor = id; document.querySelector('.compile-button-group .compile-button, .compile-button-group .btn:not(.dropdown-toggle)')?.click() },
   }
+  let nextFor = null
 
   const norm = (base, rel) => {
     const parts = (rel.startsWith('/') ? [] : base.split('/').slice(0, -1))
@@ -92,12 +96,12 @@
   }
 
   /** Renvoie { id, path, engine } ou null (= laisser le document principal). */
-  async function target() {
-    const openId = get('editor.open_doc_id')
+  async function target(forId) {
+    const openId = forId || get('editor.open_doc_id')
     const t = tree()
     if (!openId || !t) return null
     const openPath = t.byId.get(openId)
-    const text = get('editor.view')?.state?.doc?.toString() || ''
+    const text = await docText(openId)
     let id = null
     const root = magic(text, 'root')
     if (root && openPath) id = t.byPath.get(norm(openPath, root)) || null
@@ -116,7 +120,8 @@
     try {
       const url = typeof input === 'string' ? input : input?.url || ''
       if ((init?.method || 'GET').toUpperCase() === 'POST' && url.includes(`/project/${PROJECT_ID}/compile`) && typeof init.body === 'string') {
-        const tg = await target()
+        const tg = await target(nextFor)
+        nextFor = null
         if (tg) {
           const body = JSON.parse(init.body)
           body.rootDoc_id = tg.id

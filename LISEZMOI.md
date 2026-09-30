@@ -8,7 +8,10 @@ Windows via WSL2), construite sur l'[Overleaf Toolkit](https://github.com/overle
 - **sélection → Claude** : pastille ✦ au bout du texte sélectionné (Corriger, Reformuler, Raccourcir, Traduire,
   Expliquer, Demander…) ; panneau ouvert, une sélection stable part aussi toute seule en contexte ;
 - **erreurs de compilation → Claude** : bouton ✦ sur chaque erreur, « Tout envoyer à Claude » ;
-- **glisser-déposer dans le panneau** : fichiers du système (images jointes comme images) et éléments de l'arborescence ;
+- **glisser-déposer dans le panneau** : fichiers du système (images jointes comme images), documents, fichiers et
+  dossiers de l'arborescence, onglets de l'éditeur, texte et liens ;
+- **modifications externes sans fenêtre bloquante** : un toast en bas de l'écran recompile le document après un décompte
+  (croix = annuler) ; si vous écriviez dans la section modifiée, il montre le passage avant / après ;
 - **figure express** : une image déposée ou collée dans l'éditeur est importée dans `figures/` et la figure insérée
   (SVG → PDF, HEIC → JPEG, grandes photos réduites ; ⌥/Alt en déposant pour la fenêtre d'Overleaf) ;
 - **compiler le document ouvert** plutôt que le document principal (`% !TEX root`, `% !TEX program` respectés) ;

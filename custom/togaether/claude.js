@@ -282,9 +282,11 @@
   // Fichiers : glisser-déposer sur le panneau (depuis le Finder ou l'arborescence Overleaf) ou collage (⌘V)
   // dans le terminal. Fichiers du Mac → ~/overleaf/images/ (images) ou ~/overleaf/files/ du conteneur, puis le
   // chemin est collé dans l'invite (Claude Code joint les images). Document Overleaf → référence « overleaf pull ».
+  // Dossiers de l'arborescence (qu'Overleaf ne marque pas) et onglets de l'éditeur : types posés ici au départ du glisser.
   const OL_ID = 'application/x-overleaf-file-id', OL_PATH = 'application/x-overleaf-file-path'
+  const TG_FOLDER = 'application/x-tg-folder-path'
   const isImg = f => /^image\/(png|jpeg|gif|webp)$/.test(f.type)
-  const hasFiles = e => { const t = [...(e.dataTransfer?.types || [])]; return t.includes('Files') || t.includes(OL_ID) }
+  const hasFiles = e => { const t = [...(e.dataTransfer?.types || [])]; return t.some(x => x === 'Files' || x === OL_ID || x === TG_FOLDER || x === 'text/plain' || x === 'text/uri-list') }
   let toastT = 0
   function toast(msg) {
     const el = panel.querySelector('#tg-claude-toast'); el.textContent = msg; el.classList.add('on')
@@ -340,16 +342,69 @@
     t.focus?.()
     toast(`« ${path.split('/').pop()} » joint`)
   }
+  // Dossier de l'arborescence → fiche des documents et fichiers qu'il contient (chemins, ids, commandes pull).
+  async function sendFolder(path) {
+    const ov = window.tgOverleaf, pid = ov?.projectId
+    const t = await readyTerminal()
+    if (!t) return
+    const prefix = path ? path + '/' : ''
+    const tree = ov?.entries?.() || []
+    const docs = tree.filter(e => e.path.startsWith(prefix) && e.type === 'doc')
+    const files = tree.filter(e => e.path.startsWith(prefix) && e.type === 'file')
+    const md = `# Dossier Overleaf « ${path || '/'} »\n\n- Projet : id ${pid}\n- ${docs.length} document(s), ${files.length} autre(s) fichier(s)\n` +
+      (docs.length ? '\n## Documents\n\n' + docs.map(d => `- ${d.path} — \`overleaf pull ${pid} ${d.id} '${d.path}'\``).join('\n') + '\n' : '') +
+      (files.length ? '\n## Fichiers\n\n' + files.map(f => `- ${f.path}`).join('\n') + '\n' : '')
+    const ref = await postContext(md)
+    t.paste(ref ? `@${ref} ` : `[Overleaf : dossier « ${path} »] `)
+    t.focus?.()
+    toast(`Dossier « ${path.split('/').pop() || '/'} » joint`)
+  }
+  // Texte ou lien glissé (sélection de l'éditeur, du PDF, d'une page web) : une ligne est collée telle quelle,
+  // plusieurs lignes passent par un fichier de contexte (collage multi-lignes fragile).
+  async function sendText(text) {
+    text = text.replace(/\r\n?/g, '\n').trim()
+    if (!text) return
+    const t = await readyTerminal()
+    if (!t) return
+    if (!text.includes('\n')) t.paste(text + ' ')
+    else {
+      const ref = await postContext(`# Texte déposé\n\n\`\`\`\n${text}\n\`\`\`\n`)
+      t.paste(ref ? `@${ref} ` : text.replace(/\n+/g, ' ') + ' ')
+    }
+    t.focus?.()
+    toast('Texte joint')
+  }
   function onDrop(e) {
     const dt = e.dataTransfer, id = dt.getData(OL_ID)
-    if (id) return sendEntity(id, dt.getData(OL_PATH) || id)
-    sendFiles(dt.files)
+    if (id) return sendEntity(id, dt.getData(OL_PATH) || window.tgOverleaf?.docPath?.(id) || id)
+    if ([...dt.types].includes(TG_FOLDER)) return sendFolder(dt.getData(TG_FOLDER))
+    if (dt.files?.length) return sendFiles(dt.files)
+    sendText(dt.getData('text/uri-list') || dt.getData('text/plain'))
   }
+  // Départ d'un glisser : dossier de l'arborescence ou onglet de l'éditeur → types lisibles au dépôt.
+  document.addEventListener('dragstart', e => {
+    const dt = e.dataTransfer, el = e.target instanceof Element ? e.target : null
+    if (!dt || !el) return
+    const item = el.closest('.file-tree [data-file-id]')
+    if (item?.dataset.fileType === 'folder') {
+      const p = window.tgOverleaf?.entries?.().find(x => x.id === item.dataset.fileId)?.path
+      if (p != null) dt.setData(TG_FOLDER, p)
+      return
+    }
+    const tab = el.closest('.editor-tabs-container [role=tab], .editor-tabs-container [draggable=true]')
+    if (tab && !dt.types.includes(OL_ID)) {
+      const name = tab.textContent.trim()
+      const hit = (window.tgOverleaf?.entries?.() || []).filter(x => x.type !== 'folder' && x.path.split('/').pop() === name)
+      if (hit.length === 1) { dt.setData(OL_ID, hit[0].id); dt.setData(OL_PATH, hit[0].path) }
+    }
+  }, true)
   let dragDepth = 0
   const dragOn = on => panel.classList.toggle('dragging', on)
-  panel.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; dragOn(true) })
-  panel.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy' })
-  panel.addEventListener('dragleave', e => { if (!hasFiles(e)) return; if (--dragDepth <= 0) { dragDepth = 0; dragOn(false) } })
+  // stopPropagation : sinon le gestionnaire global de react-dnd (glisser depuis l'arborescence) remet
+  // dropEffect = « none » au niveau de la fenêtre et le navigateur refuse le dépôt sur le panneau.
+  panel.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); e.stopPropagation(); dragDepth++; dragOn(true) })
+  panel.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'copy' })
+  panel.addEventListener('dragleave', e => { if (!hasFiles(e)) return; e.stopPropagation(); if (--dragDepth <= 0) { dragDepth = 0; dragOn(false) } })
   panel.addEventListener('drop', e => {
     if (!hasFiles(e)) return
     e.preventDefault(); e.stopPropagation(); dragDepth = 0; dragOn(false)
